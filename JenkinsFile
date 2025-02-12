@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "mywebsite:latest"
+        CONTAINER_NAME = "webapp"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/your-repo.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    sh "docker stop ${CONTAINER_NAME} || true"
+                    sh "docker rm ${CONTAINER_NAME} || true"
+                    sh "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                }
+            }
+        }
+    }
+}
