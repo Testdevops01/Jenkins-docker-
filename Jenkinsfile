@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
-        DOCKER_IMAGE = "your-dockerhub-username/your-app"
+        DOCKER_IMAGE = "anusha1887/mynew-app"
     }
 
     stages {
@@ -16,15 +15,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    sh 'docker build -t $DOCKER_IMAGE:latest .'
                 }
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                 }
             }
         }
@@ -32,7 +31,7 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    sh 'docker push $DOCKER_IMAGE'
+                    sh 'docker push $DOCKER_IMAGE:latest'
                 }
             }
         }
@@ -40,7 +39,8 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 script {
-                    sh 'docker run -d -p 8080:80 --name my-container $DOCKER_IMAGE'
+                    sh 'docker stop my-container || true && docker rm my-container || true'
+                    sh 'docker run -d -p 8080:80 --name my-container $DOCKER_IMAGE:latest'
                 }
             }
         }
